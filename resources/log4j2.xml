@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="INFO" monitorInterval="30" packages="com.apple.ist.cctech.utils,com.apple.jvm.commons.logging.structured">
+    <Properties>
+        <Property name="rolling.file.encoder.pattern" value="%d{yyyy-MM-dd'T'HH:mm:ss.SSSZ} %-5level : %notEmpty{traceId=%X{traceId}} loggerName=&quot;%logger{36}&quot; threadName=&quot;%thread&quot; %m%n" />
+        <Property name="rolling.file.max.size" value="100 MB" />
+        <Property name="rolling.file.max.history" value="30d" />
+        <Property name="appender.queue.size" value="500" />
+<!--        <Property name="log.file.main" value="${sys:LOG_PATH}/${sys:APP_NAME}"/>-->
+        <Property name="log.file.main" value="logic"/>
+<!--        <Property name="log.file.metrics" value="${log.file.main}-metrics" />-->
+        <Property name="log.file.metrics" value="logic-metrics" />
+    </Properties>
+    <Appenders>
+
+        <Console name="console" target="SYSTEM_OUT">
+            <PatternLayout
+                    pattern="${rolling.file.encoder.pattern}" />
+        </Console>
+
+        <!-- Daily Rollover Files -->
+        <RollingFile name="ROLLING"
+                     fileName="${log.file.main}.log"
+                     filePattern="${log.file.main}.%d{yyyy-MM-dd}.%i.gz">
+            <!-- <JSONLayout compact="true" eventEol="true" /> -->
+            <PatternLayout
+                    pattern="${rolling.file.encoder.pattern}" />
+            <Policies>
+                <!-- or whenever the file size reaches the max -->
+                <SizeBasedTriggeringPolicy size="${rolling.file.max.size}" />
+            </Policies>
+            <DefaultRolloverStrategy>
+<!--                <Delete basePath="${sys:LOG_PATH}/" maxDepth="2">-->
+                <Delete basePath="./logic" maxDepth="2">
+                    <IfFileName
+                            glob="${log.file.main}.*.log.gz" />
+                    <IfLastModified age="${rolling.file.max.history}" />
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+
+
+        <!-- Daily Rollover Files with Structured -->
+        <RollingFile name="ROLLING_STRUCTURED"
+                     fileName="${log.file.main}.log"
+                     filePattern="${log.file.main}.%d{yyyy-MM-dd}.%i.gz">
+            <StructuredLayout>
+                <Basic />
+                <MapParameter />
+                <Throwable complete="true" />
+            </StructuredLayout>
+            <Policies>
+                <!-- or whenever the file size reaches the max -->
+                <SizeBasedTriggeringPolicy size="${rolling.file.max.size}" />
+            </Policies>
+            <DefaultRolloverStrategy>
+                <Delete basePath="./" maxDepth="2">
+                    <IfFileName
+                            glob="${log.file.main}.*.log.gz" />
+                    <IfLastModified age="${rolling.file.max.history}" />
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+        <!-- Masking -->
+        <!-- <Rewrite name="Rewrite">
+             <LogInterceptor />
+            <AppenderRef ref="ROLLING"/>
+         </Rewrite> -->
+    </Appenders>
+
+    <Loggers>
+        <Root level="INFO">
+            <!--    <AppenderRef ref="Rewrite"/>  -->
+            <AppenderRef ref="ROLLING" />
+            <AppenderRef ref="console" />
+        </Root>
+        <Logger name="reactor.netty.http.client.HttpClientConnect" level="DEBUG">
+            <AppenderRef ref="ROLLING" />
+        </Logger>
+        <Logger name="com.apple.appeng.aluminum.stratos.service" level="TRACE" additivity="false">
+            <AppenderRef ref="ROLLING_STRUCTURED" />
+        </Logger>
+        <Logger name="com.apple.appeng.aluminum.web.reactive.filter" level="TRACE" additivity="false">
+            <AppenderRef ref="ROLLING_STRUCTURED" />
+        </Logger>
+        <Logger name="com.apple.ist.lc" level="INFO" additivity="true">
+            <AppenderRef ref="ROLLING" />
+        </Logger>
+    </Loggers>
+
+</Configuration>
+
